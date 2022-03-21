@@ -156,16 +156,3 @@ class RetrieveLowDegree:
         pass
 
 
-def demo1():
-    download = RetrieveL2SH().config(LocalDir='../data/L2_SH_products', Institute=L2instituteType.GFZ,
-                                     Product=L2ProductType.GAA, Sat=SAT.GRACE_FO)
-    download.byYear(2002, 2022)
-
-
-def demo2():
-    download = RetrieveLowDegree(LocalDir='../data/LowDegreeReplace')
-    download.degree_one()
-    download.degree_C20_C30()
-
-if __name__ == '__main__':
-    demo1()
