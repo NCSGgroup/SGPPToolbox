@@ -3,7 +3,8 @@
 ***
 
 - Introduction
-- Usage
+- Simple Usage
+- Python Source
 - Maintainers
 
 ***
@@ -11,10 +12,35 @@
 # Introduction #
 
 Satellite Gravity Post-Processing(SGPP) Tool is used for GRACE(-FO) level-2 GSM products. From auto-downloading data to
-the final time-series results, SGPP provides complete post-process to deal with every step. In each step of
-post-process, SGPP provides optional methods and arguments for users.
+the final time-series results, SGPP provides complete post-processing to deal with every step. In each step of
+post-processing, SGPP provides optional methods and arguments for users.
+
+GRACE post-processing contains following steps:
+
+- Low-degree coefficients adjustment
+- Filtering
+- Leakage correction
+- Geophysical model adjustment(e.g. GIA, GAD, et al.)
+- 
 
 # Usage #
+
+## How do I Download files that I may use later? ##
+
+## How do I get a time series of a basin? ##
+`main.getTimeSeries.py` allows user to get a time series of a certain basin with some custom options.
+All parameters are given in a template named `main.getTimeSeries_UsersSetting.py`.
+Following is the description of them:
+
+1. `basin` defines which basin user want to analysis, and is given in the form of `Basin(Enum)`. 
+    Class `Basin(Enum)` in `pysrc.Setting` shows the basins that are supported currently.
+2. `begin` and `end` are the beginning and ending year of a time range, and can be set as integer variables.
+3. `release` defines the release of GRACE level-2 Products, and is given in the form of `L2ProductRelease(Enum)`.
+4. `institute` defines the GRACE level-2 settlement institution, and is given in the form of `L2instituteType(Enum)`.
+5. 
+
+
+# Python Source # 
 
 ## DataCollection.py ##
 This module can be used to download GRACE(-FO) GSM products and auxiliary files.

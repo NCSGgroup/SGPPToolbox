@@ -21,7 +21,7 @@ from pysrc.TimeSeriesAnalysis import For1d as ts1d
 
 
 def load_GSM_by_year(begin, end, release: L2ProductRelease, institute: L2instituteType, max_degree: L2MaxDegree,
-                     toEWH=False, replace=None, GSFC=True, replace_info=True, background=None):
+                     toEWH=True, replace=None, GSFC=True, replace_info=True, background=None):
     """
     A convenient function to load GRACE(-FO) GSM products into SHC.
     :param begin: int, begin year.
@@ -87,14 +87,12 @@ def load_GSM_by_year(begin, end, release: L2ProductRelease, institute: L2institu
     return shc_list, SHC.delta(shc_list, background)
 
 
-def calculate(basin: Basin, begin, end, release, toEWH: bool, institute, max_degree, replace_list,
-              replace_C20_GSFC: bool, dec: tuple, gauss: tuple, leakage_method, gia_model, save_path,
-              save_name,
-              background=None):
+def calculate(basin: Basin, begin, end, release, institute, max_degree, replace_list, replace_C20_GSFC: bool,
+              dec: tuple, gauss: tuple, leakage_method, gia_model, save_path, save_name, background=None):
     area = np.load('../data/grids/{}_maskGrid.dat(360,720).npy'.format(basin.name))
 
     # load & replace low-degree
-    shcs = load_GSM_by_year(begin, end, release=release, institute=institute, max_degree=max_degree, toEWH=toEWH,
+    shcs = load_GSM_by_year(begin, end, release=release, institute=institute, max_degree=max_degree,
                             replace=replace_list, GSFC=replace_C20_GSFC, replace_info=False, background=background)[1]
 
     dates = np.array([shcs[i].average_date() for i in range(len(shcs))])
@@ -261,7 +259,7 @@ def calculate(basin: Basin, begin, end, release, toEWH: bool, institute, max_deg
     with open(os.path.join(save_path, save_name_txt).replace('\\', '/'), 'w+') as f:
         f.write('basin: {}\n'.format(basin.name))
 
-        f.write('begin year: {}\nend year: {}\n'.format(begin,end))
+        f.write('begin year: {}\nend year: {}\n'.format(begin, end))
 
         f.write('institute: {}\n'.format(institute))
 
