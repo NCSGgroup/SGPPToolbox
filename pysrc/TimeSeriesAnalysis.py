@@ -134,6 +134,14 @@ class For1d:
         self.semiannual_amplitude = None
         self.semiannual_phase = None
 
+        self.delta_trend = None
+
+        self.delta_annual_amplitude = None
+        self.delta_annual_phase = None
+
+        self.delta_semiannual_amplitude = None
+        self.delta_semiannual_phase = None
+
         pass
 
     def semiannual_on(self, on: bool = True):
@@ -152,14 +160,22 @@ class For1d:
         :param values: iter
         """
         z = curve_fit(self.fit_function, times, values)[0][0]
+        delta_z = curve_fit(self.fit_function, times, values)[1][0]
 
         self.trend = z[1]
+        self.delta_trend = delta_z[1]
 
         self.annual_amplitude = np.sqrt(z[2] ** 2 + z[3] ** 2)
         self.annual_phase = np.degrees(np.arctan(z[3] / z[2]))  # phi = arctan(C/S)
 
+        self.delta_annual_amplitude = np.sqrt(delta_z[2] ** 2 + delta_z[3] ** 2)
+        self.delta_annual_phase = np.degrees(np.arctan(delta_z[3] / delta_z[2]))
+
         if self.semi_analysis:
             self.semiannual_amplitude = np.sqrt(z[4] ** 2 + z[5] ** 2)
             self.semiannual_phase = np.degrees(np.arctan(z[5] / z[4]))
+
+            self.delta_semiannual_amplitude = np.sqrt(delta_z[4] ** 2 + delta_z[5] ** 2)
+            self.delta_semiannual_phase = np.degrees(np.arctan(delta_z[5] / delta_z[4]))
 
         return self

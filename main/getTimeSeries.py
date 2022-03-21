@@ -281,11 +281,11 @@ def calculate(basin: Basin, begin, end, release, institute, max_degree, replace_
             f.write('No GIA model applied.')
 
         f.write(
-            '\ntrend = {} mm/year, annual amplitude = {} mm, semi-annual amplitude = {} mm\n'.format(
-                round(ts_analisis.trend * 1000, 2),
-                round(ts_analisis.annual_amplitude * 1000, 2),
-                round(ts_analisis.semiannual_amplitude * 1000, 2)))
-
+            '\ntrend = {} ± {} mm/year, annual amplitude = {} ± {} mm, semi-annual amplitude = {} ± {} mm\n'.format(
+                round(ts_analisis.trend * 1000, 2), round(ts_analisis.delta_trend * 1000, 2),
+                round(ts_analisis.annual_amplitude * 1000, 2), round(ts_analisis.delta_annual_amplitude * 1000, 2),
+                round(ts_analisis.semiannual_amplitude * 1000, 2),
+                round(ts_analisis.delta_semiannual_amplitude * 1000, 2)))
         f.write('=' * 20 + 'END OF HEAD' + '=' * 20 + '\n')
         for i in range(len(year_fracs)):
             f.write('{}\t{}\n'.format(dates[i], ewhs[i]))
