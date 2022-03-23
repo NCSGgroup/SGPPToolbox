@@ -3,6 +3,7 @@ from main.getTimeSeries import calculate
 from pysrc.Setting import *
 
 # ==================== user's setting ==================== #
+
 basin = Basin.Yangtze
 begin, end = 2002, 2017
 release = L2ProductRelease.RL06
@@ -18,6 +19,7 @@ gia_model = GIAModel.ICE6G_D
 save_path = '../results/test_yangtze/'
 save_name = 'yangtze'
 background = None
+
 # ================ end of user's setting ================= #
 
 if __name__ == '__main__':
