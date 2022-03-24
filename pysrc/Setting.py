@@ -19,7 +19,7 @@ class L2instituteType(Enum):
     JPL = 2
 
 
-class L2MaxDegree(Enum):
+class GSMMaxDegree(Enum):
     degree60 = 1
     degree96 = 2
 

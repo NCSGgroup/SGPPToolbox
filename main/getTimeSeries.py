@@ -17,10 +17,10 @@ from pysrc.LoveNumber import LoveNumberType, LoveNumber
 from pysrc.RefEllipsoid import EllipsoidType
 from pysrc.SHC import SHC
 from pysrc.Setting import *
-from pysrc.TimeSeriesAnalysis import For1d as ts1d
+from pysrc.TimeSeriesAnalysis import For1d as TS1d
 
 
-def load_GSM_by_year(begin, end, release: L2ProductRelease, institute: L2instituteType, max_degree: L2MaxDegree,
+def load_GSM_by_year(begin, end, release: L2ProductRelease, institute: L2instituteType, max_degree: GSMMaxDegree,
                      toEWH=True, replace=None, GSFC=True, replace_info=True, background=None):
     """
     A convenient function to load GRACE(-FO) GSM products into SHC.
@@ -36,6 +36,7 @@ def load_GSM_by_year(begin, end, release: L2ProductRelease, institute: L2institu
     :param background: None or SHC
     :return:
     """
+
     if replace is None:
         replace = []
     c10, c11, s11 = LowDegree.C10 in replace, LowDegree.C11 in replace, LowDegree.S11 in replace
@@ -44,7 +45,8 @@ def load_GSM_by_year(begin, end, release: L2ProductRelease, institute: L2institu
     all_files = []
     rl = release.name
     ins = institute.name
-    L2id = ['BA01', 'BB01'][[L2MaxDegree.degree60, L2MaxDegree.degree96].index(max_degree)]
+    L2id = ['BA01', 'BB01'][[GSMMaxDegree.degree60, GSMMaxDegree.degree96].index(max_degree)]
+    nmax = [60, 96][[GSMMaxDegree.degree60, GSMMaxDegree.degree96].index(max_degree)]
     for year in range(begin, end + 1):
         path = '../data/L2_SH_Products/{}/{}/{}/{}/{}/'.format(rl, ins, 'GSM', L2id, str(year))
         files_in_this_year = os.listdir(path)
@@ -67,13 +69,13 @@ def load_GSM_by_year(begin, end, release: L2ProductRelease, institute: L2institu
         lowdegrees.update(c20_dict)
 
     LN = LoveNumber('../data/Auxiliary/')
-    ln = LN.getNumber(60, LoveNumberType.Wang)
+    ln = LN.getNumber(nmax, LoveNumberType.Wang)
 
     shc_list = []
     for i in range(len(all_files)):
         load = LoadL2Product(all_files[i])
         shc = load.getSHC()
-        shc.truncate(60)
+        shc.truncate(nmax)
         shc.replace(lowdegrees, c10=c10, c11=c11, s11=s11, c20=c20, c30=c30, info=replace_info)
 
         if toEWH:
@@ -87,13 +89,54 @@ def load_GSM_by_year(begin, end, release: L2ProductRelease, institute: L2institu
     return shc_list, SHC.delta(shc_list, background)
 
 
+def load_GAX_by_year(begin, end, model_type: L2ProductType, release: L2ProductRelease, institute: L2instituteType,
+                     max_degree: GSMMaxDegree, toEWH=True, background=None):
+    all_files = []
+    rl = release.name
+    ins = institute.name
+    nmax = [60, 96][[GSMMaxDegree.degree60, GSMMaxDegree.degree96].index(max_degree)]
+    L2id = 'BC01'
+    for year in range(begin, end + 1):
+        path = '../data/L2_SH_Products/{}/{}/{}/{}/{}/'.format(rl, ins, model_type.name, L2id, str(year))
+        files_in_this_year = os.listdir(path)
+        all_files += [path + files_in_this_year[i] for i in range(len(files_in_this_year))]
+    all_files.sort()
+
+    LN = LoveNumber('../data/Auxiliary/')
+    ln = LN.getNumber(nmax, LoveNumberType.Wang)
+
+    shc_list = []
+    for i in range(len(all_files)):
+        load = LoadL2Product(all_files[i])
+        shc = load.getSHC()
+        shc.truncate(nmax)
+
+        if toEWH:
+            shc.convertTypeTo(DataType.EWH, ln)
+
+        shc_list.append(shc)
+
+    if background is None:
+        background = SHC.mean(shc_list)
+
+    return shc_list, SHC.delta(shc_list, background)
+
+
 def calculate(basin: Basin, begin, end, release, institute, max_degree, replace_list, replace_C20_GSFC: bool,
-              dec: tuple, gauss: tuple, leakage_method, gia_model, save_path, save_name, background=None):
+              dec: tuple, gauss: tuple, leakage_method, gia_model, gax_model, save_path, save_name, background=None):
     area = np.load('../data/grids/{}_maskGrid.dat(360,720).npy'.format(basin.name))
 
     # load & replace low-degree
-    shcs = load_GSM_by_year(begin, end, release=release, institute=institute, max_degree=max_degree,
+    print('loading files...')
+
+    shcs = load_GSM_by_year(begin, end, release=release, institute=institute, max_degree=max_degree, toEWH=True,
                             replace=replace_list, GSFC=replace_C20_GSFC, replace_info=False, background=background)[1]
+    if gax_model is not None:
+        shcs_gax = load_GAX_by_year(begin, end, model_type=gax_model, release=release, institute=institute,
+                                    max_degree=max_degree, toEWH=True, background=None)[0]
+        for i in range(len(shcs)):
+            assert shcs[i].begin_date == shcs_gax[i].begin_date, 'GSM or GAX files may not be complete, please check.'
+            shcs[i] -= shcs_gax[i]
 
     dates = np.array([shcs[i].average_date() for i in range(len(shcs))])
     year_fracs = np.array([shcs[i].year_frac_average() for i in range(len(shcs))])
@@ -246,7 +289,7 @@ def calculate(basin: Basin, begin, end, release, institute, max_degree, replace_
     ewhs -= gia_trend * (year_fracs - year_fracs[0]) / 1000
 
     # get trend et al.
-    ts_analisis = ts1d().setSignals(year_fracs, ewhs)
+    ts_analisis = TS1d().setSignals(year_fracs, ewhs)
 
     # save files
     if not os.path.exists(save_path):
@@ -281,14 +324,19 @@ def calculate(basin: Basin, begin, end, release, institute, max_degree, replace_
             f.write('No GIA model applied.')
 
         f.write(
-            '\ntrend = {} ± {} mm/year, annual amplitude = {} ± {} mm, semi-annual amplitude = {} ± {} mm\n'.format(
-                round(ts_analisis.trend * 1000, 2), round(ts_analisis.delta_trend * 1000, 2),
-                round(ts_analisis.annual_amplitude * 1000, 2), round(ts_analisis.delta_annual_amplitude * 1000, 2),
-                round(ts_analisis.semiannual_amplitude * 1000, 2),
-                round(ts_analisis.delta_semiannual_amplitude * 1000, 2)))
+            '\ntrend = {} mm/year \nsigma(trend) = {} mm/year \nannual amplitude = {} mm \nsigma(annual amplitude) =  {} mm \nsemi-annual amplitude = {} mm \nsigma(semi-annual amplitude) = {} mm\n'.format(
+                ts_analisis.trend * 1000, ts_analisis.delta_trend * 1000,
+                ts_analisis.annual_amplitude * 1000, ts_analisis.delta_annual_amplitude * 1000,
+                ts_analisis.semiannual_amplitude * 1000, ts_analisis.delta_semiannual_amplitude * 1000))
         f.write('=' * 20 + 'END OF HEAD' + '=' * 20 + '\n')
         for i in range(len(year_fracs)):
             f.write('{}\t{}\n'.format(dates[i], ewhs[i]))
 
     plt.plot(year_fracs, ewhs)
     plt.savefig(os.path.join(save_path, save_name_png), dpi=450)
+
+
+if __name__ == '__main__':
+    a, b, = load_GAX_by_year(2018, 2019, L2ProductType.GAA, L2ProductRelease.RL06, L2instituteType.GFZ,
+                             max_degree=GSMMaxDegree.degree60, toEWH=True, background=None)
+    pass
