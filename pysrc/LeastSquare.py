@@ -49,6 +49,6 @@ def curve_fit(function, t, *y):
     return results.T, var
 
 
-def fit_function(x, a, b, c, d):
-    return a + b * x + c * np.sin(2 * np.pi * x) + d * np.cos(2 * np.pi * x)
-
+def fit_function(x, a, b, c, d, e, f):
+    return a + b * x + c * np.sin(2 * np.pi * x) + d * np.cos(2 * np.pi * x) + e * np.sin(4 * np.pi * x) + f * np.cos(
+        4 * np.pi * x)

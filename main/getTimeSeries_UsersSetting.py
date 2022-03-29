@@ -5,7 +5,7 @@ from pysrc.Setting import *
 # ==================== user's setting ==================== #
 
 basin = Basin.Greenland
-begin, end = 2002, 2015
+begin, end = 2005, 2015
 release = L2ProductRelease.RL06
 institute = L2instituteType.CSR
 max_degree = GSMMaxDegree.degree60

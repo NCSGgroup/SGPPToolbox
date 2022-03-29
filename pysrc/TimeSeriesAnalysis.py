@@ -159,8 +159,9 @@ class For1d:
         :param times: iter, year fractions, for example, [2002., 2002.083, ...]
         :param values: iter
         """
-        z = curve_fit(self.fit_function, times, values)[0][0]
-        delta_z = curve_fit(self.fit_function, times, values)[1][0]
+        fit_result = curve_fit(self.fit_function, times, values)
+        z = fit_result[0][0]
+        delta_z = np.sqrt(np.diag(fit_result[1][0]))
 
         self.trend = z[1]
         self.delta_trend = delta_z[1]
