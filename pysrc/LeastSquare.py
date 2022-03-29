@@ -29,18 +29,24 @@ def curve_fit(function, t, *y):
     A = get_matrix_A(function, t)
     AT = A.T
     ATA_I = np.linalg.inv(np.dot(AT, A))
+    A_ginv = np.dot(ATA_I, AT)
+    A_ginv_A_ginv_T = np.dot(A_ginv, A_ginv.T)
 
     if len(y) == 1:
         y = y[0].reshape(-1, 1)
     else:
         y = np.vstack(y).T
 
-    results = dot_for_more(ATA_I, AT, y)[:, 0, :]
+    results = np.dot(A_ginv, y)
 
-    sigma = np.dot(A, results) - y
-    deltas = np.abs(dot_for_more(ATA_I, AT, sigma ** 2))[:,0,:]
+    epsilon = np.dot(A, results) - y
 
-    return results.T, deltas.T
+    if np.shape(epsilon)[1] == 1:
+        var = np.var(epsilon) * A_ginv_A_ginv_T
+    else:
+        var = np.array([np.var(epsilon[:, i]) * A_ginv_A_ginv_T for i in range(np.shape(epsilon)[1])])
+
+    return results.T, var
 
 
 def fit_function(x, a, b, c, d):
@@ -50,36 +56,52 @@ def fit_function(x, a, b, c, d):
 def demo1_compare():
     import scipy.optimize as opt
     t = np.arange(2005, 2021, 1 / 12)
-    y = []
+    y_true = fit_function(t, 200, 2, 5, 3)
+    y_obs_list = []
     for i in range(10):
-        this_y = fit_function(t, 200, 2, 5, 3)
-        noise = np.random.normal(0, 1, len(t))
-        y.append(this_y + noise)
+        y_obs_list.append(np.random.normal(y_true, 2))
 
-    for i in range(len(y)):
-        z_opt = opt.curve_fit(fit_function, t, y[i])
-        z = curve_fit(fit_function, t, y[i])
+    for i in range(len(y_obs_list)):
+        z_opt = opt.curve_fit(fit_function, t, y_obs_list[i])
+        z = curve_fit(fit_function, t, y_obs_list[i])
 
         print('experiment {}:'.format(i + 1))
-        print(z_opt[0], '\n', z, sep='')
-        print()
+        print('=' * 50)
+        print('opt')
+        print(z_opt[0], '\n', z[0], sep='')
+        print('sigma')
+        print(np.sqrt(np.diag(z_opt[1])), '\n', np.sqrt(np.diag(z[1])), sep='')
+        print('=' * 50)
 
 
 def demo0():
+    import scipy.optimize as opt
     import time
     t = np.arange(2005, 2021, 1 / 12)
     y = []
 
     y_true = fit_function(t, 2000, 2.3, 5.8, 4.5)
-    for i in range(100):
+    for i in range(10):
         noise = np.random.normal(0, 1, len(t))
         y.append(y_true - y_true[0] + noise)
         # plt.plot(t, y[i])
 
     time1 = time.time()
+    # z = curve_fit(fit_function, t, y[0])
     z = curve_fit(fit_function, t, *y)
     time2 = time.time()
-    print(z)
+    print('cost {} s'.format(round(time2 - time1, 3)))
+    # return 0
+
+    for i in range(len(y)):
+        print('=' * 50)
+        print(np.sqrt(np.diag(z[1][i])))
+        # print(z[0][i])
+
+        z_opt = opt.curve_fit(fit_function, t, y[i])
+        print(np.sqrt(np.diag(z_opt[1])))
+        print(np.sqrt(np.diag(z_opt[1])) / np.sqrt(np.diag(z[1][i])))
+        # print(z_opt[0])
 
 
 if __name__ == '__main__':
