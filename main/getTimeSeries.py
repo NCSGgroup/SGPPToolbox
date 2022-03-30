@@ -123,7 +123,9 @@ def load_GAX_by_year(begin, end, model_type: L2ProductType, release: L2ProductRe
 
 
 def calculate(basin: Basin, begin, end, release, institute, max_degree, replace_list, replace_C20_GSFC: bool,
-              dec: tuple, gauss: tuple, leakage_method, gia_model, gax_model, save_path, save_name, background=None):
+              dec, gauss, leakage_method, gia_model, gax_model, save_path, save_name, background=None):
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
     area = np.load('../data/grids/{}_maskGrid.dat(360,720).npy'.format(basin.name))
 
     # load & replace low-degree
@@ -292,8 +294,7 @@ def calculate(basin: Basin, begin, end, release, institute, max_degree, replace_
     ts_analisis = TS1d().setSignals(year_fracs, ewhs)
 
     # save files
-    if not os.path.exists(save_path):
-        os.makedirs(save_path)
+
     save_name_npy = save_name + '.npy'
     save_name_txt = save_name + '.txt'
     save_name_png = save_name + '.png'
@@ -334,6 +335,7 @@ def calculate(basin: Basin, begin, end, release, institute, max_degree, replace_
 
     plt.plot(year_fracs, ewhs)
     plt.savefig(os.path.join(save_path, save_name_png), dpi=450)
+    plt.close()
 
 
 if __name__ == '__main__':

@@ -5,8 +5,8 @@ from pysrc.Setting import *
 
 begin = 2002
 end = 2022
-institute = [L2instituteType.CSR, L2instituteType.JPL]
-product = [L2ProductType.GAA, L2ProductType.GAB, L2ProductType.GAC, L2ProductType.GAD]
+institute = [L2instituteType.GFZ]
+product = [L2ProductType.GAA]
 update_mode = True
 local_path_GRACEL2Products = '../data/L2_SH_products'
 # The recommended path is '../data/L2_SH_products'; None for not downloading

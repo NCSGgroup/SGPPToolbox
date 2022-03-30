@@ -15,7 +15,7 @@ class ForwardModeling:
         self.initial = None
         self.filter = None
         self.gaussian_radius = None
-        self.ani_radius_0, self.ani_radius_1 = None, None
+        self.ani_radius_0, self.ani_radius_1, self.ani_trunc_m = None, None, None
         self.fan_radius_0, self.fan_radius_1 = None, None
         self.area = None
         self.thr_time = 100
@@ -36,12 +36,13 @@ class ForwardModeling:
     def setFilter(self, filter_method: GaussianFilterType, *rs):
         self.filter = filter_method
 
-        if filter_method == GaussianFilterType.iso:
+        if filter_method == GaussianFilterType.isotropic:
             self.gaussian_radius = rs[0]
 
-        if filter_method == GaussianFilterType.ani:
+        if filter_method == GaussianFilterType.anisoropic:
             self.ani_radius_0 = rs[0]
             self.ani_radius_1 = rs[1]
+            self.ani_trunc_m = rs[2]
 
         if filter_method == GaussianFilterType.fan:
             self.fan_radius_0 = rs[0]
@@ -73,7 +74,7 @@ class ForwardModeling:
             filter_mat = isoGs(self.gaussian_radius).getFilter(self.nmax)
 
         if self.filter == GaussianFilterType.anisoropic:
-            filter_mat = aniGs(self.ani_radius_0, self.ani_radius_1).getFilter(self.nmax)
+            filter_mat = aniGs(self.ani_radius_0, self.ani_radius_1, self.ani_trunc_m).getFilter(self.nmax)
 
         if self.filter == GaussianFilterType.fan:
             filter_mat = Fan(self.fan_radius_0, self.fan_radius_1).getFilter(self.nmax)

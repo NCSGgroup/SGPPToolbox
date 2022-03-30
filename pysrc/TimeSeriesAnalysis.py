@@ -161,7 +161,7 @@ class For1d:
         """
         fit_result = curve_fit(self.fit_function, times, values)
         z = fit_result[0][0]
-        delta_z = np.sqrt(np.diag(fit_result[1][0]))
+        delta_z = np.sqrt(np.diag(fit_result[1]))
 
         self.trend = z[1]
         self.delta_trend = delta_z[1]

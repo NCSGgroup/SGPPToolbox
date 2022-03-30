@@ -13,7 +13,7 @@ replace_list = [LowDegree.C10, LowDegree.C11, LowDegree.S11, LowDegree.C20, LowD
 replace_C20_GSFC = True
 background = None
 
-dec = (DecorrelatedFilterType.PnMm, (5, 7))
+dec = None  # (DecorrelatedFilterType.PnMm, (5, 7))
 gauss = (GaussianFilterType.isotropic, (300,))
 leakage_method = LeakageMethod.Wahr2006
 

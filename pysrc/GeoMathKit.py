@@ -171,8 +171,8 @@ class GeoMathKit:
         assert shp == (360, 720) or shp == (
             180, 360), 'grid spacing MUST be 0.5 * 0.5(360 * 720) or 1 * 1(180 * 360) [deg].'
         if shp == (360, 720):
-            land_mask = np.load('../data/grids/ocean(360,720).npy')
-            ocean_mask = np.load('../data/grids/land(360,720).npy')
+            land_mask = np.load('../data/grids/ocean_maskGrid.dat(360,720).npy')
+            ocean_mask = np.load('../data/grids/land_maskGrid.dat(360,720).npy')
         else:
             land_mask = np.load('../data/grids/land_mask(180,360).npy')
             ocean_mask = np.load('../data/grids/ocean_mask(180,360).npy')
@@ -212,12 +212,3 @@ class GeoMathKit:
             l, m = GeoMathKit.getGridIndex(lon, lat, gs)
             grid[l][m] = i[2]
         return grid
-
-
-if __name__ == '__main__':
-    a = np.array([[1, 2, 3, 4],
-                  [2, 3, 4, 5],
-                  [7, 5, 3, 1],
-                  [9, 5, 0, 3]])
-    print(a)
-    print(GeoMathKit.shrink(a, 2, 2))

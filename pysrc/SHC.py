@@ -202,11 +202,13 @@ class SHC:
             print('Failed to translate SHC type, check the input')
             return self
 
-    def replace(self, coefficients: dict, *, c10=False, c11=False, s11=False, c20=False, c30=False, info=True):
+    def replace(self, coefficients: dict, *, c00=False, c10=False, c11=False, s11=False, c20=False, c30=False,
+                info=True):
         """
         Replace some certain (low-)degree/order coefficients. Currently, it supports degree-1, c20 and c30.
         :param coefficients: dict, coefficients to replace, given by LoadL2Product.LoadLowDegree.
-        :param c10: bool, True for replacing c10, False for not.
+        :param c00: bool, True for replacing c00, False for not.
+        :param c10: same as aforementioned.
         :param c11: same as aforementioned.
         :param s11: same as aforementioned.
         :param c20: same as aforementioned.
@@ -215,6 +217,17 @@ class SHC:
         :return:
         """
 
+        if c00:
+            assert 'c00' in coefficients.keys()
+            flag = False
+            for key in coefficients['c00'].keys():
+                if int(self.simple_begin()) <= int(key) <= int(self.simple_end()) and coefficients['c00'][key] == \
+                        coefficients['c00'][key]:
+                    self.Cnm2d[0][0] = coefficients['c00'][key]
+                    flag = True
+                    break
+            if info and not flag:
+                print('c00 of {} is not replaced in this situation.'.format(self.begin_date))
         if c10:
             assert 'c10' in coefficients.keys()
             flag = False
