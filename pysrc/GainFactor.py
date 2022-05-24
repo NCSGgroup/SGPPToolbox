@@ -1,7 +1,7 @@
 import numpy as np
 from scipy import optimize
 
-from pysrc.Decorrelation import PnMm, VariableWindow, StableWindow
+from pysrc.Decorrelation import *
 from pysrc.GaussianFilter import IsoGaussian, Fan, AniGaussian
 from pysrc.GeoMathKit import GeoMathKit
 from pysrc.Harmonic import Harmonic
