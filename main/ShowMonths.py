@@ -3,7 +3,7 @@ import os
 import numpy as np
 
 from main.getTimeSeries import load_GSM_by_year
-from pysrc.Decorrelated import PnMm, StableWindow, SlideWindow
+from pysrc.Decorrelation import PnMm, StableWindow, VariableWindow
 from pysrc.GaussianFilter import IsoGaussian, AniGaussian, Fan
 from pysrc.Harmonic import Harmonic
 from pysrc.LoadL2Product import LoadL2Product, LoadLowDegree
@@ -79,8 +79,8 @@ def show_month(release, institute, max_degree, year, month, replace, replace_C20
         elif decFilterType == DecorrelatedFilterType.StableWindow:
             decFilter = StableWindow(*dec_paras)
 
-        elif decFilterType == DecorrelatedFilterType.SlideWindow:
-            decFilter = SlideWindow(*dec_paras)
+        elif decFilterType == DecorrelatedFilterType.VariableWindow:
+            decFilter = VariableWindow(*dec_paras)
 
         if decFilter is not None:
             shcs = decFilter.ApplyTo(shc)

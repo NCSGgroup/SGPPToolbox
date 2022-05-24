@@ -11,6 +11,7 @@ from pysrc.Grid import Grid
 from pysrc.Setting import ProjectionType
 
 mpl.rcParams['font.family'] = 'STSong'
+mpl.rcParams['font.size'] = 20
 plt.rcParams['axes.unicode_minus'] = False
 
 
@@ -80,7 +81,7 @@ def plot_grid(*grid, area=None, save=None, projection=ProjectionType.PlateCarree
 
     transform = ccrs.PlateCarree()
     axes_class = (GeoAxes, dict(map_projection=projection))
-    fig1 = plt.figure(figsize=(14, 6))
+    fig1 = plt.figure(figsize=(12, 8))
     axgr = AxesGrid(fig1, 111, axes_class=axes_class,
                     nrows_ncols=rc,
                     axes_pad=1,
@@ -94,6 +95,8 @@ def plot_grid(*grid, area=None, save=None, projection=ProjectionType.PlateCarree
         lon2d, lat2d = np.meshgrid(lon, lat)
         p = ax.pcolormesh(lon2d, lat2d, grids[i], cmap="RdBu", transform=transform, vmin=grid[i][2],
                           vmax=grid[i][3])
+        # p = ax.contour(lon2d, lat2d, grids[i], cmap="RdBu", transform=transform, vmin=grid[i][2],
+        #                   vmax=grid[i][3])
         # ax.gridlines(draw_labels=True, dms=False, x_inline=None, y_inline=None, auto_inline=True)
         # ax.gridlines()
         ax.coastlines(resolution='110m')

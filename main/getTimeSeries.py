@@ -3,7 +3,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
-from pysrc.Decorrelated import PnMm, SlideWindow, StableWindow
+from pysrc.Decorrelation import PnMm, VariableWindow, StableWindow
 from pysrc.ForwardModeling import ForwardModeling
 from pysrc.GainFactor import SingleFactor
 from pysrc.GaussianFilter import IsoGaussian, AniGaussian, Fan
@@ -156,8 +156,8 @@ def calculate(basin: Basin, begin, end, release, institute, max_degree, replace_
         elif decFilterType == DecorrelatedFilterType.StableWindow:
             decFilter = StableWindow(*dec_paras)
 
-        elif decFilterType == DecorrelatedFilterType.SlideWindow:
-            decFilter = SlideWindow(*dec_paras)
+        elif decFilterType == DecorrelatedFilterType.VariableWindow:
+            decFilter = VariableWindow(*dec_paras)
 
         if decFilter is not None:
             shcs = decFilter.ApplyTo(*shcs)

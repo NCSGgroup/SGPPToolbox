@@ -1,3 +1,4 @@
+import copy
 import datetime
 import re
 
@@ -31,6 +32,7 @@ class LoadL2Product:
 
 
     """
+
     def __init__(self, filepath: str):
         self.filepath = filepath
         self.filename = filepath.split('/')[-1]
@@ -103,7 +105,6 @@ class LoadL2Product:
         pat_degree = 'max_degree *\d+'
         deg = int(re.search(pat_degree, txt).group().split()[-1])
 
-        nmax = deg
         Cnm2d = np.zeros((deg + 1, deg + 1))
         Snm2d = np.zeros((deg + 1, deg + 1))
 
@@ -220,3 +221,31 @@ class LoadLowDegree:
             print('check low-degree file path.')
             return {}
 
+
+def demo():
+    from pysrc.LoveNumber import LoveNumber, LoveNumberType
+    from pysrc.Setting import DataType
+    shc1 = LoadL2Product(
+        '../data/L2_SH_Products/RL06/GFZ/GSM/BA01/2002/GSM-2_2002095-2002120_GRAC_GFZOP_BA01_0600').getSHC()
+
+    shc2 = copy.deepcopy(shc1)
+
+    LN = LoveNumber('../data/Auxiliary/')
+    ln = LN.getNumber(60, LoveNumberType.Wang)
+
+    shc1.convertTypeTo(DataType.density, ln)
+
+    C1 = shc1.Cnm2d
+
+    shc2.convertTypeTo(DataType.EWH, ln)
+    shc1.convertTypeTo(DataType.density, ln)
+
+    C2 = shc1.Cnm2d
+
+    print(np.max(np.abs(C1)), np.max(np.abs(C1 - C2)))
+
+    pass
+
+
+if __name__ == '__main__':
+    demo()

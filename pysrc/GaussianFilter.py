@@ -7,6 +7,28 @@ from pysrc.SHC import SHC
 from pysrc.Setting import EarthModel
 
 
+def for_SHCs(shcs, matrix):
+    shcs_filtered = []
+    for i in range(len(shcs)):
+        this_shc = copy.deepcopy(shcs[i])
+        this_shc *= matrix
+        shcs_filtered.append(this_shc)
+
+    if len(shcs) == 1:
+        shcs_filtered = shcs_filtered[0]
+
+    return shcs_filtered
+
+
+def for_vecCS(shcs, matrix):
+    if len(shcs) == 1:
+        shc = shcs[0]
+        return [matrix * shc]
+    else:
+        shcs = np.array(shcs)
+        return np.einsum('lm,plm->plm', matrix, shcs)
+
+
 class IsoGaussian:
     def __init__(self, r, earth_model: EarthModel = EarthModel.general):
         """
@@ -35,18 +57,16 @@ class IsoGaussian:
         elif output_format == '1d':
             return w
 
-    def ApplyTo(self, *shcs: SHC):
-        nmax = shcs[0].nmax
-        matrix = self.getFilter(nmax)
-        shcs_filtered = []
-        for i in range(len(shcs)):
-            this_shc = copy.deepcopy(shcs[i])
-            this_shc *= matrix
-            shcs_filtered.append(this_shc)
+    def ApplyTo(self, shcs: list):
+        if type(shcs[0]) is SHC:
+            nmax = shcs[0].nmax
+            matrix = self.getFilter(nmax)
+            return for_SHCs(shcs, matrix)
 
-        if len(shcs) == 1:
-            shcs_filtered = shcs_filtered[0]
-        return shcs_filtered
+        else:
+            nmax = np.shape(shcs[0])[0] - 1
+            matrix = self.getFilter(nmax)
+            return for_vecCS(shcs, matrix)
 
 
 class AniGaussian:
@@ -91,19 +111,16 @@ class AniGaussian:
 
         return matrix
 
-    def ApplyTo(self, *shcs: SHC):
-        nmax = shcs[0].nmax
-        matrix = self.getFilter(nmax)
+    def ApplyTo(self, shcs: list):
+        if type(shcs[0]) is SHC:
+            nmax = shcs[0].nmax
+            matrix = self.getFilter(nmax)
+            return for_SHCs(shcs, matrix)
 
-        shcs_filtered = []
-        for i in range(len(shcs)):
-            this_shc = copy.deepcopy(shcs[i])
-            this_shc *= matrix
-            shcs_filtered.append(this_shc)
-
-        if len(shcs) == 1:
-            shcs_filtered = shcs_filtered[0]
-        return shcs_filtered
+        else:
+            nmax = np.shape(shcs[0])[0] - 1
+            matrix = self.getFilter(nmax)
+            return for_vecCS(shcs, matrix)
 
 
 class Fan:
@@ -142,16 +159,13 @@ class Fan:
 
         return matrix
 
-    def ApplyTo(self, *shcs: SHC):
-        nmax = shcs[0].nmax
-        matrix = self.getFilter(nmax)
+    def ApplyTo(self, shcs: list):
+        if type(shcs[0]) is SHC:
+            nmax = shcs[0].nmax
+            matrix = self.getFilter(nmax)
+            return for_SHCs(shcs, matrix)
 
-        shcs_filtered = []
-        for i in range(len(shcs)):
-            this_shc = copy.deepcopy(shcs[i])
-            this_shc *= matrix
-            shcs_filtered.append(this_shc)
-
-        if len(shcs) == 1:
-            shcs_filtered = shcs_filtered[0]
-        return shcs_filtered
+        else:
+            nmax = np.shape(shcs[0])[0] - 1
+            matrix = self.getFilter(nmax)
+            return for_vecCS(shcs, matrix)

@@ -1,7 +1,7 @@
 """
     It provides several classes to decrease the correlation of the certain SHCs for the sake of removing the 'stripes'
 of the time-variable gravity(TVG) filed.
-    Currently, PnMm methods, stable-window de-correlation filter and slide-window de-correlation filter are available.
+    Currently, PnMm methods, sliding stable window de-correlation filter and sliding variable window de-correlation filters are available.
 """
 import copy
 
@@ -85,7 +85,7 @@ class StableWindow:
         return shcs_filtered
 
 
-class SlideWindow:
+class VariableWindow:
     def __init__(self, n, m, window_min, a, k):
         self.poly_n = n
         self.start_m = m

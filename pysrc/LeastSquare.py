@@ -52,3 +52,22 @@ def curve_fit(function, t, *y):
 def fit_function(x, a, b, c, d, e, f):
     return a + b * x + c * np.sin(2 * np.pi * x) + d * np.cos(2 * np.pi * x) + e * np.sin(4 * np.pi * x) + f * np.cos(
         4 * np.pi * x)
+
+
+def func(x, a, b, c):
+    return a + b * x + c * x ** 2
+
+
+def demo():
+    x = np.arange(10)
+    y = 3 * x + 4
+    print(get_matrix_A(func, x))
+    noise = np.random.random(len(x)) * 0.1
+
+    z = curve_fit(func, x, y + noise)
+
+    # print(z)
+
+
+if __name__ == '__main__':
+    demo()

@@ -17,6 +17,7 @@ class L2instituteType(Enum):
     GFZ = 0
     CSR = 1
     JPL = 2
+    COST_G = 3
 
 
 class GSMMaxDegree(Enum):
@@ -41,6 +42,7 @@ class DataType(Enum):
     geoid = 1
     EWH = 2
     density = 3
+    TWS = 4
 
 
 class EarthModel(Enum):
@@ -61,7 +63,7 @@ class LeakageMethod(Enum):
 
 
 class DecorrelatedFilterType(Enum):
-    SlideWindow = 1
+    VariableWindow = 1
     StableWindow = 2
     PnMm = 3
 
@@ -126,3 +128,14 @@ class Basin(Enum):
     Yukon = 37
     Zambeze = 38
     Ocean = 39
+
+
+class DDKFilterType(Enum):
+    DDK1 = 1
+    DDK2 = 2
+    DDK3 = 3
+    DDK4 = 4
+    DDK5 = 5
+    DDK6 = 6
+    DDK7 = 7
+    DDK8 = 8

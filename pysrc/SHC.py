@@ -169,6 +169,12 @@ class SHC:
         :return:
         """
         assert len(ln) >= self.nmax
+
+        self.__convertTypeToGeoid(ln)
+        self.__convertTypeFromGeoid(datatype, ln)
+        return self
+
+    def __convertTypeFromGeoid(self, datatype: DataType, ln):
         assert self.type is DataType.geoid
 
         if self.earth_model is EarthModel.general:
@@ -176,30 +182,66 @@ class SHC:
                 dic = json.load(f)['general']
         density_water, density_earth, radius_e = dic['density_water'], dic['density_earth'], dic['radius_e']
 
-        if datatype is self.type:
+        if datatype is DataType.geoid:
             return self
 
         elif datatype is DataType.EWH:
             ln = ln[:self.nmax + 1]
             kn = np.array([(2 * n + 1) / (1 + ln[n]) for n in range(len(ln))]) * radius_e * density_earth / (
                     3 * density_water)
-            knm = np.array([[kn[l] for i in range(self.nmax + 1)] for l in range(self.nmax + 1)])
-            self.Cnm2d *= knm
-            self.Snm2d *= knm
+
+            self.Cnm2d = np.einsum('l,lm->lm', kn, self.Cnm2d)
+            self.Snm2d = np.einsum('l,lm->lm', kn, self.Snm2d)
+
             self.type = DataType.EWH
             return self
 
         elif datatype is DataType.density:
             ln = ln[:self.nmax + 1]
             kn = np.array([(2 * n + 1) / (1 + ln[n]) for n in range(len(ln))]) * radius_e * density_earth / 3
-            knm = np.array([[kn[l] for i in range(self.nmax + 1)] for l in range(self.nmax + 1)])
-            self.Cnm2d *= knm
-            self.Snm2d *= knm
-            self.type = DataType.EWH
+
+            self.Cnm2d = np.einsum('l,lm->lm', kn, self.Cnm2d)
+            self.Snm2d = np.einsum('l,lm->lm', kn, self.Snm2d)
+
+            self.type = DataType.density
             return self
 
         else:
-            print('Failed to translate SHC type, check the input')
+            print('Failed to convert SHC type, check the input')
+            return self
+
+    def __convertTypeToGeoid(self, ln):
+        if self.earth_model is EarthModel.general:
+            with open('../data/json/EarthModels.json', 'r+') as f:
+                dic = json.load(f)['general']
+        density_water, density_earth, radius_e = dic['density_water'], dic['density_earth'], dic['radius_e']
+
+        if self.type is DataType.geoid:
+            return self
+
+        elif self.type is DataType.EWH:
+            ln = ln[:self.nmax + 1]
+            kn = np.array([(1 + ln[n]) / (2 * n + 1) for n in range(len(ln))]) * 3 * density_water / (
+                    radius_e * density_earth)
+
+            self.Cnm2d = np.einsum('l,lm->lm', kn, self.Cnm2d)
+            self.Snm2d = np.einsum('l,lm->lm', kn, self.Snm2d)
+
+            self.type = DataType.geoid
+            return self
+
+        elif self.type is DataType.density:
+            ln = ln[:self.nmax + 1]
+            kn = np.array([(1 + ln[n]) / (2 * n + 1) for n in range(len(ln))]) * 3 / (radius_e * density_earth)
+
+            self.Cnm2d = np.einsum('l,lm->lm', kn, self.Cnm2d)
+            self.Snm2d = np.einsum('l,lm->lm', kn, self.Snm2d)
+
+            self.type = DataType.geoid
+            return self
+
+        else:
+            print('Failed to convert SHC type, check the input')
             return self
 
     def replace(self, coefficients: dict, *, c00=False, c10=False, c11=False, s11=False, c20=False, c30=False,

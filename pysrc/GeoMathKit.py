@@ -134,6 +134,54 @@ class GeoMathKit:
         return Pnm
 
     @staticmethod
+    def getPnmMatrix(lat, Nmax: int, option=0):
+        """
+        get legendre function up to degree/order Nmax in Lat.
+        :param lat: Co-latitude if option=0, unit[rad]; geophysical latitude if option = others, unit[degree]
+        :param Nmax:
+        :param option:
+        :return:
+        """
+
+        if option != 0:
+            lat = (90. - lat) / 180. * np.pi
+
+        # NMmax = int((Nmax + 1) * (Nmax + 2) / 2)
+
+        if type(lat) is np.ndarray:
+            Nsize = np.size(lat)
+        else:
+            Nsize = 1
+
+        # Pnm = np.zeros((NMmax, Nsize))
+
+        Pnm = np.zeros((Nsize, Nmax + 1, Nmax + 1))
+        Pnm[:, 0, 0] = 1
+        Pnm[:, 1, 1] = np.sqrt(3) * np.sin(lat)
+
+        #
+        # Pnm[GeoMathKit.getIndex(0, 0)] = 1
+        #
+        # Pnm[GeoMathKit.getIndex(1, 1)] = np.sqrt(3) * np.sin(lat)
+
+        '''For the diagonal element'''
+        for n in range(2, Nmax + 1):
+            Pnm[:, n, n] = np.sqrt((2 * n + 1) / (2 * n)) * np.sin(lat) * Pnm[:, n - 1, n - 1]
+
+        for n in range(1, Nmax + 1):
+            Pnm[:, n, n - 1] = np.sqrt(2 * n + 1) * np.cos(lat) * Pnm[:, n - 1, n - 1]
+
+        for n in range(2, Nmax + 1):
+            for m in range(n - 2, -1, -1):
+                Pnm[:, n, m] = \
+                    np.sqrt((2 * n + 1) / ((n - m) * (n + m)) * (2 * n - 1)) \
+                    * np.cos(lat) * Pnm[:, n - 1, m] \
+                    - np.sqrt((2 * n + 1) / ((n - m) * (n + m)) * (n - m - 1) * (n + m - 1) / (2 * n - 3)) \
+                    * Pnm[:, n - 2, m]
+
+        return Pnm
+
+    @staticmethod
     def shrink(data, rows, cols):
         return data.reshape(rows, int(data.shape[0] / rows), cols, int(data.shape[1] / cols)).sum(axis=1).sum(axis=2)
 
@@ -161,26 +209,32 @@ class GeoMathKit:
         return np.sin(thetas)
 
     @staticmethod
-    def keepland_c(grid):
+    def keepland_c(grid: list):
         """
         keep the land signal while satisfying (quality) conservation.
         :param grid: spacing MUST be 0.5 * 0.5(360 * 720) or 1 * 1(180 * 360) [deg]
         :return:
         """
-        shp = np.shape(grid)
+        if len(np.shape(grid)) == 3:
+            shp = np.shape(grid[0])
+        else:
+            shp = np.shape(grid)
+
         assert shp == (360, 720) or shp == (
             180, 360), 'grid spacing MUST be 0.5 * 0.5(360 * 720) or 1 * 1(180 * 360) [deg].'
-        if shp == (360, 720):
-            land_mask = np.load('../data/grids/ocean_maskGrid.dat(360,720).npy')
-            ocean_mask = np.load('../data/grids/land_maskGrid.dat(360,720).npy')
-        else:
-            land_mask = np.load('../data/grids/land_mask(180,360).npy')
-            ocean_mask = np.load('../data/grids/ocean_mask(180,360).npy')
 
-        land = grid * ocean_mask
-        total_ocean = sum(sum(grid * land_mask))
-        ocean_fix = total_ocean * land_mask / sum(sum(land_mask))
-        return land + ocean_fix
+        ocean = np.load('../data/grids/ocean_maskGrid.dat(360,720).npy')
+        land = np.load('../data/grids/land_maskGrid.dat(360,720).npy')
+        if shp == (360, 720):
+            pass
+        else:
+            ocean = GeoMathKit.shrink(ocean, 180, 360) / 4
+            land = GeoMathKit.shrink(land, 180, 360) / 4
+
+        signal_on_land = grid * land
+        total_ocean = - np.array([GeoMathKit.gridSum(grid[i], land) for i in range(len(grid))])
+        ocean_fix = total_ocean * GeoMathKit.getAcreage(land) / GeoMathKit.getAcreage(ocean)
+        return signal_on_land + np.array([ocean_fix[i] * ocean for i in range(len(ocean_fix))])
 
     @staticmethod
     def getAcreage(area, earth_model=EarthModel.general):
@@ -212,3 +266,15 @@ class GeoMathKit:
             l, m = GeoMathKit.getGridIndex(lon, lat, gs)
             grid[l][m] = i[2]
         return grid
+
+
+def demo():
+    ac_ocean = GeoMathKit.getAcreage(np.load('../data/grids/Ocean_maskGrid.dat(360,720).npy'))
+    print(ac_ocean * 0.035 / 1000 / 10 ** 9)
+
+    ac_Gl = GeoMathKit.getAcreage(np.load('../data/grids/Greenland_maskGrid.dat(360,720).npy'))
+    print(ac_ocean * 2.3 / 1000 / 10 ** 9)
+
+
+if __name__ == '__main__':
+    demo()

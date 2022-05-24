@@ -1,95 +1,112 @@
-import numpy as np
-
+from pysrc.Decorrelation import *
+from pysrc.GaussianFilter import *
 from pysrc.GeoMathKit import GeoMathKit
-from pysrc.Grid import Grid
-from pysrc.Harmonic import Harmonic, EllipsoidType
-from pysrc.SHC import SHC
+from pysrc.Harmonic import Harmonic
+from pysrc.Setting import *
 
 
 class Leakage:
-    def __init__(self):
-        self.area = None
-        self.grid_space = None
-        self.signals = None
-        self.signal_type = None  # Grid, SHC
-        self.filter_matrix = None
-        self.nmax = None
-        self.scale_factor = None
+    def __init__(self, area: np.ndarray):
+        self.area = area
+        self.origin_dec = None
+        self.origin_Gs = None
 
-    def setArea(self, area):
-        if type(area) is Grid:
-            self.grid_space = area.grid_space
-            self.area = area.map
-        else:
-            self.grid_space = 180 / np.shape(area)[0]
-            self.area = area
+        self.Gaussian_filter = None
+        pass
 
+    def setOriginalFilter(self, de_correlation_filter=None, Gaussian_filter=None):
+        self.origin_dec = de_correlation_filter
+        self.origin_Gs = Gaussian_filter
         return self
 
-    def setSignal(self, signals: list):
+    def setGaussianFilter(self, Gaussian_filter):
+        self.Gaussian_filter = Gaussian_filter
+        return self
+
+    def ApplyTo(self, *shcs, grid_space=0.5):
         """
-        :param signals:list of SHCs or list of Grids
+        Currently Cnms and Snms should be DataType.EWH
         """
-        assert type(signals[0]) in (SHC, Grid)
+        assert self.Gaussian_filter is not None
 
-        self.signals = signals
-        self.signal_type = type(signals[0])
-        return self
+        shcs_filtered = shcs
+        nmax = shcs[0].nmax
 
-    def setGaussianFilter(self, filter_matrix):
-        self.filter_matrix = filter_matrix
-        self.nmax = np.shape(filter_matrix)
-        return self
+        if self.origin_dec is not None:
+            if self.origin_dec[0] == DecorrelatedFilterType.PnMm:
+                dec = PnMm(*self.origin_dec[1])
+                shcs_filtered = dec.ApplyTo(*shcs)
 
-    def getTS(self):
+            elif self.origin_dec[0] == DecorrelatedFilterType.StableWindow:
+                dec = StableWindow(*self.origin_dec[1])
+                shcs_filtered = dec.ApplyTo(*shcs)
 
-        area = self.area
-        matrix = self.filter_matrix
+            elif self.origin_dec[0] == DecorrelatedFilterType.VariableWindow:
+                dec = VariableWindow(*self.origin_dec[1])
+                shcs_filtered = dec.ApplyTo(*shcs)
 
-        year_fracs = []
-        leakage_signals = []
-        signals = []
-        area_bar = 1 - area
+        Cnms_filtered = [shcs_filtered[i].Cnm2d for i in range(len(shcs_filtered))]
+        Snms_filtered = [shcs_filtered[i].Snm2d for i in range(len(shcs_filtered))]
 
-        lat = np.arange(-90, 90, self.grid_space)
-        lon = np.arange(-180, 180, self.grid_space)
-        Har = Harmonic(Parallel=-1).setEllipsoid(ell=EllipsoidType.gif48)
-        Pnm = GeoMathKit.getPnm(lat, self.nmax, 1)
+        if self.origin_Gs is not None:
+            if self.origin_Gs[0] == GaussianFilterType.isotropic:
+                Gs_filter = IsoGaussian(*self.origin_Gs[1])
+                Cnms_filtered = Gs_filter.ApplyTo(Cnms_filtered)
+                Snms_filtered = Gs_filter.ApplyTo(Snms_filtered)
 
-        grids_global = []
+            elif self.origin_Gs[0] == GaussianFilterType.anisoropic:
+                Gs_filter = AniGaussian(*self.origin_Gs[1])
+                Cnms_filtered = Gs_filter.ApplyTo(Cnms_filtered)
+                Snms_filtered = Gs_filter.ApplyTo(Snms_filtered)
 
-        Cnm_area, Snm_area = Har.analysis(60, area, lat, lon, Pnm)
-        area_filtered = Har.synthesis(Cnm_area * matrix, Snm_area * matrix, 60, lat, lon)
-        self.scale_factor = GeoMathKit.gridSum(area, area) / GeoMathKit.gridSum(area_filtered, area)
+            elif self.origin_Gs[0] == GaussianFilterType.fan:
+                Gs_filter = Fan(*self.origin_Gs[1])
+                Cnms_filtered = Gs_filter.ApplyTo(Cnms_filtered)
+                Snms_filtered = Gs_filter.ApplyTo(Snms_filtered)
 
-        if self.signal_type is SHC:
-            SHCs = self.signals
-            for i in range(len(SHCs)):
-                shc = SHCs[i]
-                grid_global = Har.synthesis_for_SHC(shc, lat, lon)
-                grids_global.append(grid_global)
+        lat = np.arange(-90, 90, grid_space)
+        lon = np.arange(-180, 180, grid_space)
+        colat_rad, lon_rad = GeoMathKit.getCoLatLoninRad(lat, lon)
+        PnmMatrix = GeoMathKit.getPnmMatrix(colat_rad, nmax)
+        Har = Harmonic(lat, lon, PnmMatrix, nmax)
 
-        elif self.signal_type is Grid:
-            grids = self.signals
-            for i in range(len(grids)):
-                grids_global.append(grids[i])
+        grids = Har.synthesis(Cnms_filtered, Snms_filtered)
 
-        for i in range(len(grids_global)):
-            year_fracs.append(grids_global[i].year_frac_average())
+        grids_out_basin = grids * (1 - self.area)
 
-            this_map_bar = grids_global[i].map * area_bar
-            Cnm_bar, Snm_bar = Har.analysis(60, this_map_bar, lat, lon, Pnm)
-            Cnm_bar *= matrix
-            Snm_bar *= matrix
-            leakage_map = Har.synthesis(Cnm_bar, Snm_bar, 60, lat, lon)
+        Cnms_out_basin, Snms_out_basin = Har.analysis(grids_out_basin)
+        if self.Gaussian_filter[0] == GaussianFilterType.isotropic:
+            Gs_filter_second = IsoGaussian(*self.origin_Gs[1])
+            Cnms_out_basin = Gs_filter_second.ApplyTo(Cnms_out_basin)
+            Snms_out_basin = Gs_filter_second.ApplyTo(Snms_out_basin)
 
-            this_map = grids_global[i].map * area
-            Cnm, Snm = Har.analysis(60, this_map, lat, lon, Pnm)
-            Cnm *= matrix
-            Snm *= matrix
-            signal_map = Har.synthesis(Cnm, Snm, 60, lat, lon)
+        elif self.Gaussian_filter[0] == GaussianFilterType.isotropic:
+            Gs_filter_second = IsoGaussian(*self.origin_Gs[1])
+            Cnms_out_basin = Gs_filter_second.ApplyTo(Cnms_out_basin)
+            Snms_out_basin = Gs_filter_second.ApplyTo(Snms_out_basin)
 
-            leakage_signals.append(GeoMathKit.gridSum(leakage_map, area))
-            signals.append(GeoMathKit.gridSum(signal_map, area))
+        elif self.Gaussian_filter[0] == GaussianFilterType.isotropic:
+            Gs_filter_second = IsoGaussian(*self.origin_Gs[1])
+            Cnms_out_basin = Gs_filter_second.ApplyTo(Cnms_out_basin)
+            Snms_out_basin = Gs_filter_second.ApplyTo(Snms_out_basin)
 
-        return np.array(year_fracs), self.scale_factor * (np.array(signals) - np.array(leakage_signals))
+        grids_out_basin_filtered = Har.synthesis(Cnms_out_basin, Snms_out_basin)
+
+        return [GeoMathKit.gridSum(grids_out_basin_filtered[i], self.area) for i in
+                range(len(grids_out_basin_filtered))]
+
+
+def demo():
+    from main.getTimeSeries import load_GSM_by_year
+
+    shcs = load_GSM_by_year(2005, 2015, L2ProductRelease.RL06, L2instituteType.CSR, GSMMaxDegree.degree60, toEWH=True)[
+        1]
+
+    lk = Leakage(np.load('../data/grids/Ocean_maskGrid.dat(360,720).npy'))
+    lk.setOriginalFilter((PnMm, (3, 10)), (GaussianFilterType.isotropic, (200,)))
+    lk.setGaussianFilter((GaussianFilterType.isotropic, (300,)))
+    lk.ApplyTo(*shcs)
+
+
+if __name__ == '__main__':
+    demo()

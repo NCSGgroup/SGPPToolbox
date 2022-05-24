@@ -154,5 +154,3 @@ class RetrieveLowDegree:
                     self._ftp.retrbinary('RETR %s' % file, file_handle, blocksize=1024)
 
         pass
-
-

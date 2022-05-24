@@ -4,29 +4,32 @@ import numpy as np
 
 from pysrc.GaussianFilter import IsoGaussian as isoGs, AniGaussian as aniGs, Fan as Fan
 from pysrc.GeoMathKit import GeoMathKit
-from pysrc.Harmonic import Harmonic, EllipsoidType
-from pysrc.Setting import GaussianFilterType
+from pysrc.Grid import Grid
+from pysrc.Harmonic import Harmonic
+from pysrc.Setting import *
 
 
 class ForwardModeling:
     def __init__(self):
         self.model_obs = None
         self.model_tru = None
-        self.initial = None
+        self.initials = None
         self.filter = None
         self.gaussian_radius = None
         self.ani_radius_0, self.ani_radius_1, self.ani_trunc_m = None, None, None
         self.fan_radius_0, self.fan_radius_1 = None, None
         self.area = None
-        self.thr_time = 100
-        self.nmax = 60
+        self.thr_time = 50
+        self.nmax = None
 
-    def setModel(self, observed, initial=None):
-        if initial is None:
-            initial = observed
+    def setModel(self, observeds: list, initials=None):
+        if initials is None:
+            initials = observeds
 
-        self.model_obs = observed
-        self.initial = initial
+        assert len(observeds) == len(initials)
+
+        self.model_obs = observeds
+        self.initials = initials
         return self
 
     def setArea(self, area):
@@ -53,46 +56,66 @@ class ForwardModeling:
         self.nmax = n
         return self
 
-    def setLoopTime(self, time=None):
-        if time is not None:
-            self.thr_time = time
+    def setLoopTime(self, time: int):
+        self.thr_time = time
         return self
 
     def run(self):
-        sp = self.model_obs.grid_space
+        # paras year_frac is for an experiment!
+        if type(self.initials[0]) is Grid:
+            initials = np.array([self.initials[i].map for i in range(len(self.initials))])
+            sp = self.model_obs.grid_space
+        else:
+            initials = self.initials
+            sp = 180 / np.shape(initials[0])[0]
 
         lat = np.arange(-90, 90, sp)
         lon = np.arange(-180, 180, sp)
-        Pnm = GeoMathKit.getPnm(lat, self.nmax, 1)
+        colat_rad, lon_rad = GeoMathKit.getCoLatLoninRad(lat, lon)
 
-        model_tru = copy.deepcopy(self.initial).map * self.area
-        Har = Harmonic(Parallel=-1)
-        Har.setEllipsoid(EllipsoidType.gif48)
+        PnmMartix = GeoMathKit.getPnmMatrix(colat_rad, self.nmax, 0)
 
-        filter_mat = None
+        if type(self.model_obs[0]) is Grid:
+            model_obs = np.array([self.model_obs[i].map for i in range(len(self.model_obs))])
+        else:
+            model_obs = self.model_obs
+
+        model_tru = copy.deepcopy(initials) * self.area
+        Har = Harmonic(lat, lon, PnmMartix, self.nmax)
+
+        filter = None
         if self.filter == GaussianFilterType.isotropic:
-            filter_mat = isoGs(self.gaussian_radius).getFilter(self.nmax)
+            filter = isoGs(self.gaussian_radius)
 
         if self.filter == GaussianFilterType.anisoropic:
-            filter_mat = aniGs(self.ani_radius_0, self.ani_radius_1, self.ani_trunc_m).getFilter(self.nmax)
+            filter = aniGs(self.ani_radius_0, self.ani_radius_1, self.ani_trunc_m)
 
         if self.filter == GaussianFilterType.fan:
-            filter_mat = Fan(self.fan_radius_0, self.fan_radius_1).getFilter(self.nmax)
+            filter = Fan(self.fan_radius_0, self.fan_radius_1)
 
         it = 0
+
         while True:
             it += 1
-            Cnm, Snm = Har.analysis(Nmax=60, Inner=model_tru, lat=lat, lon=lon, Pnm=Pnm)
-            model_pre = Har.synthesis(Cnm * filter_mat, Snm * filter_mat, self.nmax, lat, lon)
-            model_dif = (self.model_obs.map - model_pre) * self.area
 
-            if it > self.thr_time:
-                break
+            print('\rforward modeling: iter={}'.format(it), end='')
 
-            model_dif = GeoMathKit.keepland_c(model_dif)
+            model_tru = GeoMathKit.keepland_c(model_tru)
+
+            Cnms, Snms = Har.analysis(Inners=model_tru)
+            Cnms_filtered, Snms_filtered = filter.ApplyTo(Cnms), filter.ApplyTo(Snms)
+
+            model_pre = Har.synthesis(Cnms_filtered, Snms_filtered)
+            model_dif = (model_obs - model_pre) * self.area
+
             model_tru += model_dif
 
-            print('\riter={}'.format(it), end='')
+            if it >= self.thr_time:
+                break
+
+        self.last_model_dif = model_dif
+        self.last_model_pre = model_pre
+
         print()
         self.model_tru = model_tru
         return self
