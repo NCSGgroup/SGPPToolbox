@@ -61,7 +61,6 @@ class ForwardModeling:
         return self
 
     def run(self):
-        # paras year_frac is for an experiment!
         if type(self.initials[0]) is Grid:
             initials = np.array([self.initials[i].map for i in range(len(self.initials))])
             sp = self.model_obs.grid_space
@@ -112,9 +111,6 @@ class ForwardModeling:
 
             if it >= self.thr_time:
                 break
-
-        self.last_model_dif = model_dif
-        self.last_model_pre = model_pre
 
         print()
         self.model_tru = model_tru

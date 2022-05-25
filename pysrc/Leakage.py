@@ -8,6 +8,8 @@ from pysrc.Setting import *
 class Leakage:
     def __init__(self, area: np.ndarray):
         self.area = area
+        self.grid_space = 180 / np.shape(area)[0]
+
         self.origin_dec = None
         self.origin_Gs = None
 
@@ -23,7 +25,7 @@ class Leakage:
         self.Gaussian_filter = Gaussian_filter
         return self
 
-    def ApplyTo(self, *shcs, grid_space=0.5):
+    def ApplyTo(self, *shcs):
         """
         Currently Cnms and Snms should be DataType.EWH
         """
@@ -64,8 +66,8 @@ class Leakage:
                 Cnms_filtered = Gs_filter.ApplyTo(Cnms_filtered)
                 Snms_filtered = Gs_filter.ApplyTo(Snms_filtered)
 
-        lat = np.arange(-90, 90, grid_space)
-        lon = np.arange(-180, 180, grid_space)
+        lat = np.arange(-90, 90, self.grid_space)
+        lon = np.arange(-180, 180, self.grid_space)
         colat_rad, lon_rad = GeoMathKit.getCoLatLoninRad(lat, lon)
         PnmMatrix = GeoMathKit.getPnmMatrix(colat_rad, nmax)
         Har = Harmonic(lat, lon, PnmMatrix, nmax)
