@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 from netCDF4 import Dataset
 
@@ -45,6 +46,33 @@ def getTWS(file):
     return (sm0_10 + sm10_40 + sm40_100 + sm100_200 + cano + swe) / 1000
 
 
+def demo():
+    import os
+
+    basin = np.load('../data/grids/Amazon_maskGrid.dat(360,720).npy')
+
+    gldas_path = '../data/Noah2.1'
+    files = os.listdir(gldas_path)
+    files.sort()
+
+    x = []
+    y = []
+    for i in range(len(files)):
+        yyyymm = files[i].split('.')[1]
+        year = int(yyyymm[1:5])
+        month = int(yyyymm[5:])
+        year_frac = year + (month - 1) / 12
+
+        tws = getTWS(os.path.join(gldas_path, files[i]))
+
+        x.append(year_frac)
+        y.append(GeoMathKit.gridSum(tws, basin))
+
+        print(year, month, y[i])
+
+    plt.plot(x, y)
+    plt.show()
+
+
 if __name__ == '__main__':
-    tws = getTWS('../data/Noah2.1/GLDAS_NOAH10_M.A200204.021.nc4.SUB.nc4')
-    print(tws)
+    demo()
