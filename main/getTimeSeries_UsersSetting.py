@@ -15,7 +15,7 @@ background = None
 
 dec = None  # (DecorrelatedFilterType.PnMm, (5, 7))
 gauss = (GaussianFilterType.isotropic, (300,))
-leakage_method = LeakageMethod.Wahr2006
+leakage_method = LeakageMethod.ScaleFactor
 
 gia_model = GIAModel.Caron2018
 gax_model = None

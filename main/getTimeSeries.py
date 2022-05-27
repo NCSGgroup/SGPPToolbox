@@ -150,13 +150,13 @@ def calculate(basin: Basin, begin, end, release, institute, max_degree, replace_
     if dec is not None:
         decFilterType = dec[0]
         dec_paras = dec[1]
-        if decFilterType == DecorrelatedFilterType.PnMm:
+        if decFilterType == DecorrelationFilterType.PnMm:
             decFilter = PnMm(*dec_paras)
 
-        elif decFilterType == DecorrelatedFilterType.StableWindow:
+        elif decFilterType == DecorrelationFilterType.StableWindow:
             decFilter = StableWindow(*dec_paras)
 
-        elif decFilterType == DecorrelatedFilterType.VariableWindow:
+        elif decFilterType == DecorrelationFilterType.VariableWindow:
             decFilter = VariableWindow(*dec_paras)
 
         if decFilter is not None:
@@ -222,7 +222,7 @@ def calculate(basin: Basin, begin, end, release, institute, max_degree, replace_
         ewhs = np.array(ewhs)
         np.save(os.path.join(save_path, save_name).replace('\\', '/'), np.array([year_fracs, ewhs]))
 
-    elif leakage_method == LeakageMethod.Wahr2006:
+    elif leakage_method == LeakageMethod.ScaleFactor:
         print('leakage: wahr\'s method')
         for i in range(len(grids)):
             ewhs.append(GeoMathKit.gridSum(grids[i], area))
@@ -326,9 +326,9 @@ def calculate(basin: Basin, begin, end, release, institute, max_degree, replace_
 
         f.write(
             '\ntrend = {} mm/year \nsigma(trend) = {} mm/year \nannual amplitude = {} mm \nsigma(annual amplitude) =  {} mm \nsemi-annual amplitude = {} mm \nsigma(semi-annual amplitude) = {} mm\n'.format(
-                ts_analisis.trend * 1000, ts_analisis.delta_trend * 1000,
-                ts_analisis.annual_amplitude * 1000, ts_analisis.delta_annual_amplitude * 1000,
-                ts_analisis.semiannual_amplitude * 1000, ts_analisis.delta_semiannual_amplitude * 1000))
+                ts_analisis.trend * 1000, ts_analisis.sigma_trend * 1000,
+                ts_analisis.annual_amplitude * 1000, ts_analisis.sigma_annual_amplitude * 1000,
+                ts_analisis.semiannual_amplitude * 1000, ts_analisis.sigma_semiannual_amplitude * 1000))
         f.write('=' * 20 + 'END OF HEAD' + '=' * 20 + '\n')
         for i in range(len(year_fracs)):
             f.write('{}\t{}\n'.format(dates[i], ewhs[i]))

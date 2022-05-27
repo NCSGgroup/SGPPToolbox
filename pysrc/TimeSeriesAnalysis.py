@@ -20,7 +20,7 @@ def fit_function_without_semiannual(x, a, b, c, d):
     return a + b * x + c * np.sin(2 * np.pi * x) + d * np.cos(2 * np.pi * x)
 
 
-class AreaAnalysis:
+class BasinAnalysis:
     def __init__(self, area):
         self.time_points = []
         self.maps = []
@@ -46,7 +46,7 @@ class AreaAnalysis:
 
     @staticmethod
     def __curve_fit(x, y):
-        results, deltas = curve_fit(AreaAnalysis.__fc, x, y)
+        results, deltas = curve_fit(BasinAnalysis.__fc, x, y)
 
         return results, deltas
 
@@ -129,18 +129,18 @@ class For1d:
         self.trend = None
 
         self.annual_amplitude = None
-        self.annual_phase = None
+        self.annual_phase = None  # degree
 
         self.semiannual_amplitude = None
-        self.semiannual_phase = None
+        self.semiannual_phase = None  # degree
 
-        self.delta_trend = None
+        self.sigma_trend = None
 
-        self.delta_annual_amplitude = None
-        self.delta_annual_phase = None
+        self.sigma_annual_amplitude = None
+        self.sigma_annual_phase = None
 
-        self.delta_semiannual_amplitude = None
-        self.delta_semiannual_phase = None
+        self.sigma_semiannual_amplitude = None
+        self.sigma_semiannual_phase = None
 
         pass
 
@@ -161,22 +161,31 @@ class For1d:
         """
         fit_result = curve_fit(self.fit_function, times, values)
         z = fit_result[0][0]
-        delta_z = np.sqrt(np.diag(fit_result[1]))
+        sigma_z = fit_result[1]
 
         self.trend = z[1]
-        self.delta_trend = delta_z[1]
+        self.sigma_trend = np.sqrt(sigma_z[1, 1])
 
         self.annual_amplitude = np.sqrt(z[2] ** 2 + z[3] ** 2)
         self.annual_phase = np.degrees(np.arctan(z[3] / z[2]))  # phi = arctan(C/S)
 
-        self.delta_annual_amplitude = np.sqrt(delta_z[2] ** 2 + delta_z[3] ** 2)
-        self.delta_annual_phase = np.degrees(np.arctan(delta_z[3] / delta_z[2]))
+        k_annual_amp = np.array([z[2], z[3]]) / self.annual_amplitude
+        k_annual_phase = np.array([-z[2], z[3]]) / (self.annual_amplitude ** 2)
+
+        sigma_annual = sigma_z[2:4, 2:4]
+        self.sigma_annual_amplitude = np.sqrt(k_annual_amp @ sigma_annual @ k_annual_amp.T)
+        self.sigma_annual_phase = np.degrees(np.sqrt(k_annual_phase @ sigma_annual @ k_annual_phase.T))
 
         if self.semi_analysis:
             self.semiannual_amplitude = np.sqrt(z[4] ** 2 + z[5] ** 2)
             self.semiannual_phase = np.degrees(np.arctan(z[5] / z[4]))
 
-            self.delta_semiannual_amplitude = np.sqrt(delta_z[4] ** 2 + delta_z[5] ** 2)
-            self.delta_semiannual_phase = np.degrees(np.arctan(delta_z[5] / delta_z[4]))
+            k_semiannual_amp = np.array([z[4], z[5]]) / self.semiannual_amplitude
+            k_semiannual_phase = np.array([-z[5], z[4]]) / (self.semiannual_amplitude ** 2)
+
+            sigma_semiannual = sigma_z[4:6, 4:6]
+            self.sigma_semiannual_amplitude = np.sqrt(k_semiannual_amp @ sigma_semiannual @ k_semiannual_amp.T)
+            self.sigma_semiannual_phase = np.degrees(
+                np.sqrt(k_semiannual_phase @ sigma_semiannual @ k_semiannual_phase.T))
 
         return self

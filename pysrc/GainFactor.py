@@ -43,15 +43,15 @@ class GainFactor:
         if self.dec is not None:
             shcs = [SHC((Cnms[i], Snms[i])) for i in range(len(self.original_models))]
 
-            if self.dec[0] == DecorrelatedFilterType.PnMm:
+            if self.dec[0] == DecorrelationFilterType.PnMm:
                 dec = PnMm(*self.dec[1])
                 shcs = dec.ApplyTo(*shcs)
 
-            elif self.dec[0] == DecorrelatedFilterType.StableWindow:
+            elif self.dec[0] == DecorrelationFilterType.StableWindow:
                 dec = StableWindow(*self.dec[1])
                 shcs = dec.ApplyTo(*shcs)
 
-            elif self.dec[0] == DecorrelatedFilterType.VariableWindow:
+            elif self.dec[0] == DecorrelationFilterType.VariableWindow:
                 dec = VariableWindow(*self.dec[1])
                 shcs = dec.ApplyTo(*shcs)
 
@@ -143,7 +143,7 @@ def demo():
 
     grids = np.array(grids)
 
-    bf = GainFactor().setFilter(de_correlation_filter=(DecorrelatedFilterType.PnMm, (3, 10)),
+    bf = GainFactor().setFilter(de_correlation_filter=(DecorrelationFilterType.PnMm, (3, 10)),
                                 Gaussian_filter=(GaussianFilterType.isotropic, (300,))).setModel(grids)
     k = bf.getGridFactor()
     plot_grid([Grid(k), '', 0, 2])

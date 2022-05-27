@@ -33,15 +33,15 @@ class ScaleFactor:
 
         if self.dec is not None:
             shc_basin = SHC((Cnm, Snm))
-            if self.dec[0] == DecorrelatedFilterType.PnMm:
+            if self.dec[0] == DecorrelationFilterType.PnMm:
                 dec = PnMm(*self.dec[1])
                 shc_basin = dec.ApplyTo(shc_basin)
 
-            elif self.dec[0] == DecorrelatedFilterType.StableWindow:
+            elif self.dec[0] == DecorrelationFilterType.StableWindow:
                 dec = StableWindow(*self.dec[1])
                 shc_basin = dec.ApplyTo(shc_basin)
 
-            elif self.dec[0] == DecorrelatedFilterType.VariableWindow:
+            elif self.dec[0] == DecorrelationFilterType.VariableWindow:
                 dec = VariableWindow(*self.dec[1])
                 shc_basin = dec.ApplyTo(shc_basin)
 
@@ -72,7 +72,7 @@ class ScaleFactor:
 def demo():
     basin = np.load('../data/grids/Caspian_maskGrid.dat(360,720).npy')
     sf = ScaleFactor(basin)
-    sf.setFilter(de_correlation_filter=(DecorrelatedFilterType.PnMm, (3, 10)),
+    sf.setFilter(de_correlation_filter=(DecorrelationFilterType.PnMm, (3, 10)),
                  Gaussian_filter=(GaussianFilterType.anisoropic, (300, 500, 15)))
     k = sf.getFactor()
     print(k)

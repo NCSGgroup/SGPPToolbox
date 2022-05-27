@@ -56,13 +56,13 @@ class GaussianFilterType(Enum):
 
 
 class LeakageMethod(Enum):
-    Wahr2006 = 1
+    ScaleFactor = 1
     ForwardModeling = 2
     BufferZone = 3
     GainFactor = 4
 
 
-class DecorrelatedFilterType(Enum):
+class DecorrelationFilterType(Enum):
     VariableWindow = 1
     StableWindow = 2
     PnMm = 3

@@ -11,7 +11,7 @@ max_degree = GSMMaxDegree.degree60
 replace_list = [LowDegree.C10, LowDegree.C11, LowDegree.S11]
 replace_C20_GSFC = True
 toEWH = True
-dec = (DecorrelatedFilterType.PnMm, (4, 6))
+dec = (DecorrelationFilterType.PnMm, (4, 6))
 gauss = (GaussianFilterType.isotropic, (300,))
 
 area = [-180, 180, -90, 90]  # [lon_start, lon_end, lat_start, lat_end], None for global

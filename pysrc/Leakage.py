@@ -35,15 +35,15 @@ class Leakage:
         nmax = shcs[0].nmax
 
         if self.origin_dec is not None:
-            if self.origin_dec[0] == DecorrelatedFilterType.PnMm:
+            if self.origin_dec[0] == DecorrelationFilterType.PnMm:
                 dec = PnMm(*self.origin_dec[1])
                 shcs_filtered = dec.ApplyTo(*shcs)
 
-            elif self.origin_dec[0] == DecorrelatedFilterType.StableWindow:
+            elif self.origin_dec[0] == DecorrelationFilterType.StableWindow:
                 dec = StableWindow(*self.origin_dec[1])
                 shcs_filtered = dec.ApplyTo(*shcs)
 
-            elif self.origin_dec[0] == DecorrelatedFilterType.VariableWindow:
+            elif self.origin_dec[0] == DecorrelationFilterType.VariableWindow:
                 dec = VariableWindow(*self.origin_dec[1])
                 shcs_filtered = dec.ApplyTo(*shcs)
 
@@ -94,8 +94,8 @@ class Leakage:
 
         grids_out_basin_filtered = Har.synthesis(Cnms_out_basin, Snms_out_basin)
 
-        return [GeoMathKit.gridSum(grids_out_basin_filtered[i], self.area) for i in
-                range(len(grids_out_basin_filtered))]
+        return np.array([GeoMathKit.gridSum(grids_out_basin_filtered[i], self.area) for i in
+                         range(len(grids_out_basin_filtered))])
 
 
 def demo():

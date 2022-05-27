@@ -73,13 +73,13 @@ def show_month(release, institute, max_degree, year, month, replace, replace_C20
     if dec is not None:
         decFilterType = dec[0]
         dec_paras = dec[1]
-        if decFilterType == DecorrelatedFilterType.PnMm:
+        if decFilterType == DecorrelationFilterType.PnMm:
             decFilter = PnMm(*dec_paras)
 
-        elif decFilterType == DecorrelatedFilterType.StableWindow:
+        elif decFilterType == DecorrelationFilterType.StableWindow:
             decFilter = StableWindow(*dec_paras)
 
-        elif decFilterType == DecorrelatedFilterType.VariableWindow:
+        elif decFilterType == DecorrelationFilterType.VariableWindow:
             decFilter = VariableWindow(*dec_paras)
 
         if decFilter is not None:
