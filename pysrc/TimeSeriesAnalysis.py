@@ -159,7 +159,7 @@ class For1d:
         :param times: iter, year fractions, for example, [2002., 2002.083, ...]
         :param values: iter
         """
-        fit_result = curve_fit(self.fit_function, times, values)
+        fit_result = curve_fit(self.fit_function, times - times[0], values)
         z = fit_result[0][0]
         sigma_z = fit_result[1]
 
