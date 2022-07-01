@@ -108,10 +108,15 @@ class VariableWindow:
                 a = int((window_len - 1) / 2)
                 for l0 in range(m, nmax + 1):
                     ll = np.array(range(l0 - 2 * a, l0 + 2 * a + 1, 2))
-                    if np.min(ll) < m:
-                        ll += (m - np.min(ll))
-                    if np.max(ll) > nmax:
-                        ll -= (np.max(ll) - nmax)
+
+                    degree_beyond_flag = np.min(ll) < m or np.max(ll) > nmax
+                    while degree_beyond_flag:
+                        if np.min(ll) < m:
+                            ll += 2
+                        if np.max(ll) > nmax:
+                            ll -= 2
+                        degree_beyond_flag = np.min(ll) < m or np.max(ll) > nmax
+
                     yC = np.array([shcs[i].Cnm2d[l][m] for l in ll])
                     zC = np.polyfit(ll, yC, self.poly_n)
                     pC = np.poly1d(zC)
